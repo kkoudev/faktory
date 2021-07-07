@@ -49,12 +49,8 @@ test: clean generate ## Execute test suite
 
 # docker buildx create --name cross
 # docker buildx use cross
-dimg: clean generate ## Make cross-platform Docker images for the current version
-	@GOOS=linux GOARCH=amd64 go build -o $(NAME) cmd/faktory/daemon.go
-	upx -qq ./faktory
-	docker buildx build --platform linux/amd64 --tag contribsys/faktory:$(VERSION) --tag contribsys/faktory:latest --load .
-	@GOOS=linux GOARCH=arm64 go build -o $(NAME) cmd/faktory/daemon.go
-	docker buildx build --platform linux/arm64 --tag contribsys/faktory:$(VERSION) --tag contribsys/faktory:latest --load .
+dimg: xbuild ## Make cross-platform Docker images for the current version
+	docker buildx build --platform linux/amd64,linux/arm64 --tag contribsys/faktory:$(VERSION) --tag contribsys/faktory:latest --load .
 
 drun: ## Run Faktory in a local Docker image, see also "make dimg"
 	docker run --rm -it -e "FAKTORY_SKIP_PASSWORD=true" \
@@ -95,9 +91,11 @@ cover:
 	open coverage.html
 
 xbuild: clean generate
-	@GOOS=linux GOARCH=amd64 go build -o $(NAME) cmd/faktory/daemon.go
+	@GOOS=linux GOARCH=amd64 go build -o $(NAME)-amd64 cmd/faktory/daemon.go
+	@GOOS=linux GOARCH=arm64 go build -o $(NAME)-arm64 cmd/faktory/daemon.go
 	# brew install upx
-	upx -qq ./faktory
+	upx -qq ./$(NAME)-amd64
+	upx -qq ./$(NAME)-arm64
 
 build: clean generate
 	go build -o $(NAME) cmd/faktory/daemon.go
@@ -128,7 +126,7 @@ work: ## Run a simple Ruby worker, see also "make run"
 
 clean: ## Clean the project, set it up for a new build
 	@rm -rf tmp
-	@rm -f main faktory templates.go
+	@rm -f main faktory-amd64 faktory-arm64 templates.go
 	@rm -rf packaging/output
 	@mkdir -p packaging/output/upstart
 	@mkdir -p packaging/output/systemd

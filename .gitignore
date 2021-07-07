@@ -19,8 +19,7 @@ vendor/
 
 .DS_Store
 
-/faktory
-/faktory-cli
+/faktory-*
 /loadtest
 /coverage.html
 tags
